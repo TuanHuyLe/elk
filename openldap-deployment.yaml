@@ -1,3 +1,28 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: openldap-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/data/openldap"
+  storageClassName: ""
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openldap-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,6 +51,18 @@ spec:
           value: "example.org"
         - name: LDAP_ADMIN_PASSWORD
           value: "admin"
+        volumeMounts:
+        - name: ldap-data
+          mountPath: /var/lib/ldap
+        - name: ldap-config
+          mountPath: /etc/ldap/slapd.d
+      volumes:
+      - name: ldap-data
+        persistentVolumeClaim:
+          claimName: openldap-pvc
+      - name: ldap-config
+        persistentVolumeClaim:
+          claimName: openldap-pvc
 ---
 apiVersion: v1
 kind: Service
